@@ -1,0 +1,180 @@
+{
+  "_note": "Condition titles are transcribed VERBATIM from the source infographic, including its typos and duplicate entries. Those are product/content decisions for Mike, not engineering fixes. All copy fields are DRAFT plain-language descriptions focused on what imaging can show; they require clinical sign-off before launch. See HANDOFF.md -> Content flags.",
+  "regions": [
+    {
+      "id": "shoulder",
+      "index": "01",
+      "label": "Shoulders",
+      "side": "left",
+      "xPct": 29.19,
+      "yPct": 21.0,
+      "ailments": [
+        {
+          "id": "a01",
+          "title": "Rotator Cuff–Partial Tears",
+          "copy": "A partial tear means some fibres of the rotator cuff tendon are damaged but the tendon is not completely separated. MRI or ultrasound can show the depth of the tear and any surrounding inflammation."
+        },
+        {
+          "id": "a02",
+          "title": "Biceps Tendinosis",
+          "copy": "Long-term irritation and degeneration of the biceps tendon, usually where it runs through the groove at the front of the shoulder. Imaging helps assess tendon thickness and fluid around it."
+        },
+        {
+          "id": "a03",
+          "title": "Chronic Glenohumeral Ligament Sprain",
+          "copy": "A long-standing stretch or injury to the ligaments that stabilise the shoulder's ball-and-socket joint. MR arthrography can depict the ligament complex and the joint capsule."
+        },
+        {
+          "id": "a04",
+          "title": "Acromio-Clavicular Joint Dysfunction",
+          "copy": "Irritation or instability of the small joint where the collarbone meets the shoulder blade. X-ray and MRI can show joint widening, bone bruising and soft-tissue swelling."
+        },
+        {
+          "id": "a05",
+          "title": "Levator Scapulae Tendinosis",
+          "copy": "Degenerative change in the tendon of the muscle that lifts the shoulder blade, often felt as a persistent ache near the inner upper shoulder blade. Imaging is used mainly to exclude other causes of pain."
+        }
+      ]
+    },
+    {
+      "id": "elbow",
+      "index": "02",
+      "label": "Elbows",
+      "side": "left",
+      "xPct": 19.46,
+      "yPct": 37.0,
+      "ailments": [
+        {
+          "id": "a06",
+          "title": "Ulnar Collateral Ligament Injury",
+          "copy": "Damage to the ligament on the inner side of the elbow that resists outward stress. MRI or stress ultrasound can distinguish a sprain from a partial or complete tear."
+        },
+        {
+          "id": "a07",
+          "title": "Distal Biceps Tendon Partial Tear",
+          "copy": "A partial tear of the biceps tendon where it attaches just below the elbow. MRI is the most reliable way to judge how much of the tendon remains attached and whether it has retracted."
+        }
+      ]
+    },
+    {
+      "id": "wrist",
+      "index": "03",
+      "label": "Wrist & Hand",
+      "side": "left",
+      "xPct": 18.38,
+      "yPct": 48.6,
+      "ailments": [
+        {
+          "id": "a08",
+          "title": "Chronic Thumb Sprain",
+          "copy": "A long-standing injury to the ligaments at the base of the thumb, commonly the ulnar collateral ligament. Imaging can distinguish a stable sprain from a displaced tear."
+        },
+        {
+          "id": "a09",
+          "title": "Joint Arthritis",
+          "copy": "Wear-and-tear change in the small joints of the hand and wrist, with cartilage loss and bone remodelling. X-ray shows joint-space narrowing, osteophytes and alignment."
+        },
+        {
+          "id": "a10",
+          "title": "Arthritic Joints",
+          "copy": "Inflammatory or degenerative arthritis affecting several small joints of the hand. Imaging helps document which joints are involved and track change over time."
+        }
+      ]
+    },
+    {
+      "id": "hip",
+      "index": "04",
+      "label": "Hip, Pelvis and SI Joints",
+      "side": "right",
+      "xPct": 60.0,
+      "yPct": 47.0,
+      "ailments": [
+        {
+          "id": "a11",
+          "title": "Greater Trochanteric Bursitis",
+          "copy": "Irritation of the bursa over the outer hip bone, often called greater trochanteric pain syndrome. MRI or ultrasound can show bursal fluid and assess the adjacent gluteal tendons."
+        },
+        {
+          "id": "a12",
+          "title": "Hamstring Strain",
+          "copy": "A stretch or tear of the hamstring muscle group at the back of the thigh, frequently near its origin at the sitting bone. MRI can map the extent of the tear and any tendon involvement."
+        },
+        {
+          "id": "a13",
+          "title": "Ischial Tuberosity Bursitis",
+          "copy": "Inflammation of the bursa between the sitting bone and the hamstring tendon. Ultrasound and MRI can demonstrate fluid in this deep space."
+        },
+        {
+          "id": "a14",
+          "title": "Hip Joint Arthritis",
+          "copy": "Progressive cartilage loss within the hip's ball-and-socket joint. Weight-bearing X-rays show joint-space narrowing, osteophytes and changes in bone density."
+        },
+        {
+          "id": "a15",
+          "title": "Symphysis Pubis Pain",
+          "copy": "Discomfort arising from the joint joining the two pubic bones at the front of the pelvis. Imaging can show widening, oedema or degenerative change at the symphysis."
+        }
+      ]
+    },
+    {
+      "id": "knee",
+      "index": "05",
+      "label": "Knee",
+      "side": "right",
+      "xPct": 68.65,
+      "yPct": 70.2,
+      "ailments": [
+        {
+          "id": "a16",
+          "title": "Patellar Tendonitis/Tendinosis",
+          "copy": "Overload-related irritation or degeneration of the tendon below the kneecap, common in jumping sports. Ultrasound and MRI show tendon thickening and areas of fibre disruption."
+        },
+        {
+          "id": "a17",
+          "title": "Quadraceps Strain/Partial Tear",
+          "copy": "A strain or partial tear of the quadriceps muscle–tendon unit at the front of the thigh. MRI is used to define the location and size of the tear."
+        },
+        {
+          "id": "a18",
+          "title": "Degenerative Arthritis",
+          "copy": "Gradual cartilage wear in the knee, often called osteoarthritis. Weight-bearing X-ray shows joint-space narrowing and osteophyte formation."
+        }
+      ]
+    },
+    {
+      "id": "ankle",
+      "index": "06",
+      "label": "Ankle, Foot & Lower Leg",
+      "side": "right",
+      "xPct": 74.05,
+      "yPct": 93.4,
+      "ailments": [
+        {
+          "id": "a19",
+          "title": "Chronic Ligament Strains",
+          "copy": "Repeated or long-standing stretching of the ankle ligaments, often after earlier sprains. MRI can show thickened or scarred ligaments and associated tendon or cartilage injury."
+        },
+        {
+          "id": "a20",
+          "title": "Chronic Achilles Tendinosis",
+          "copy": "Long-term degenerative change in the Achilles tendon rather than active inflammation. Ultrasound and MRI show tendon thickening and an altered internal fibre pattern."
+        },
+        {
+          "id": "a21",
+          "title": "Chronic Partial Tendon Tear",
+          "copy": "A long-standing incomplete tear within a tendon of the lower leg or ankle. Imaging defines which tendon is involved and how much of its width is torn."
+        },
+        {
+          "id": "a22",
+          "title": "Plantar Fasciitis",
+          "copy": "Degenerative irritation of the plantar fascia band under the heel. Ultrasound can show thickening near its heel attachment; X-ray may show a heel spur."
+        },
+        {
+          "id": "a23",
+          "title": "Calf Pain",
+          "copy": "Pain in the back of the lower leg with many possible causes, including muscle strain, venous issues and nerve irritation. Imaging is used to look for a muscle tear, fluid collection or vascular cause."
+        }
+      ]
+    }
+  ]
+}

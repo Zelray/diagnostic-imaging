@@ -1,0 +1,83 @@
+{
+  "crop": {
+    "x0": 405,
+    "y0": 140,
+    "x1": 590,
+    "y1": 640
+  },
+  "upscale": 3,
+  "assetSize": [
+    555,
+    1500
+  ],
+  "aspect": 0.37,
+  "note": "xPct/yPct are relative to the body PNG itself, not the stage.",
+  "hotspots": [
+    {
+      "id": "shoulder",
+      "label": "Shoulders",
+      "side": "left",
+      "xPct": 29.19,
+      "yPct": 21.0,
+      "sourceXY": [
+        459.0,
+        245.0
+      ]
+    },
+    {
+      "id": "elbow",
+      "label": "Elbows",
+      "side": "left",
+      "xPct": 19.46,
+      "yPct": 37.0,
+      "sourceXY": [
+        441.0,
+        325.0
+      ]
+    },
+    {
+      "id": "wrist",
+      "label": "Wrist & Hand",
+      "side": "left",
+      "xPct": 18.38,
+      "yPct": 48.6,
+      "sourceXY": [
+        439.0,
+        383.0
+      ]
+    },
+    {
+      "id": "hip",
+      "label": "Hip, Pelvis and SI Joints",
+      "side": "right",
+      "xPct": 60.0,
+      "yPct": 47.0,
+      "sourceXY": [
+        516.0,
+        375.0
+      ]
+    },
+    {
+      "id": "knee",
+      "label": "Knee",
+      "side": "right",
+      "xPct": 68.65,
+      "yPct": 70.2,
+      "sourceXY": [
+        532.0,
+        491.0
+      ]
+    },
+    {
+      "id": "ankle",
+      "label": "Ankle, Foot & Lower Leg",
+      "side": "right",
+      "xPct": 74.05,
+      "yPct": 93.4,
+      "sourceXY": [
+        542.0,
+        607.0
+      ]
+    }
+  ]
+}

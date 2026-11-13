@@ -1,0 +1,14 @@
+# The original branded infographic is the clinic's artwork.
+# Not redistributed in this repo. clean_asset.py expects it locally.
+rs=h_{640}.webp
+
+# Session / QA artifacts (screenshots for the README are copied to docs/)
+build/*.png
+build/chrome-*.txt
+build/prof-*/
+
+# Internal working documents (machine-local paths, session notes)
+HANDOFF.md
+STATUS.md
+GATES.md
+build/probe.html

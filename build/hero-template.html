@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive Anatomy Atlas — Diagnostic Imaging</title>
+<!-- SPEC-REVIEW SAFEGUARD (Mike, 2026-11-12): this build is a spec redesign
+     headed for a no-index VPS so the doctor can critique it. Belt-and-braces
+     on top of the VPS-level no-index: ask crawlers to stay out at the page
+     level too. REMOVE this line when the hero is integrated into the real
+     site, so the practice's pages can be indexed normally. -->
+<meta name="robots" content="noindex, nofollow">
+<!-- An empty inline icon stops the browser requesting /favicon.ico. On file://
+     that request is pointless; on a hosted site it would be a 404 in console.
+     It adds no image and no network request. -->
+<link rel="icon" href="data:,">
+<!--
+  ============================================================================
+  INTERACTIVE ANATOMY HERO  —  readable SOURCE template
+  ============================================================================
+  This file is NOT the deliverable. `build/build_html.py` reads this template,
+  injects (a) the 23-condition data from build/data.json and (b) the anatomy
+  plate as a base64 WebP, and writes the single self-contained index.html that
+  Mike can double-click. Edit HERE, then re-run the build script.
+
+  DESIGN DECISIONS (from the Agency review, synthesised):
+    * Dark "reading room" ground. The pale translucent body dissolves on white;
+      on near-black it reads as a backlit radiograph. Verified by render.
+    * One classic script tag, all data inline, BOTH anatomy plates as data
+      URIs (cyan scan for dark, original art for light). ES modules and
+      fetch() are blocked on file:// -- this hero must work by double-click,
+      offline, with zero network requests.
+    * Percent-positioned hotspots INSIDE the same 3D-transformed stage as the
+      body image, so they stay glued to the joints at any size and any tilt.
+    * ONE global openId drives all 23 accordions -> only one can ever be open.
+    * Hover/focus PULSES; clicking OPENS. Two different visual languages so a
+      user can always tell "I'm pointing" from "I'm reading".
+    * Rotation is a subtle perspective TILT only. A flat front-view raster has
+      no back; we never claim a 3D model, a posterior view, or diagnostic
+      accuracy. Reduced-motion and touch users get the flat default view.
+
+  CONTENT NOTE: all condition titles are transcribed verbatim from the source,
+  typos included. All descriptions are DRAFT copy requiring clinical sign-off.
+  See HANDOFF.md -> "Content flags for Mike".
+  ============================================================================
+-->
+<style>
+/* ---------------------------------------------------------------------------
+   1. DESIGN TOKENS
+   Every colour, font and easing lives here so the hero can be re-skinned for
+   the real practice by changing this one block.
+   ------------------------------------------------------------------------- */
+:root {
+  --bg:        #0B1218;   /* deep desaturated slate ink, never violet */
+  --bg-pool:   #16262F;   /* radial light pool behind the torso */
+  --bg-edge:   #070C10;   /* vignette corners */
+
+  --text:      #EDF4F7;   /* cool near-white, ~17:1 on --bg */
+  --text-2:    #9FB3BE;   /* secondary, ~8.7:1 */
+  --muted:     #8299A6;   /* eyebrows / meta, ~6.3:1 */
+
+  --ice:       #6FC2E0;   /* focus + anatomy accent, ~9.4:1 */
+  --ice-hi:    #A8DCEF;
+  --ice-lo:    #2E7C9E;
+  --pain:      #F4705C;   /* coral pain accent, ~6.6:1 */
+  --pain-hi:   #FF9A85;
+
+  --hairline:  rgba(159,195,214,.12);
+  --hairline-2:rgba(159,195,214,.08);
+  --glass:     rgba(255,255,255,.030);
+  --glass-hi:  rgba(255,255,255,.055);
+  --glass-ice: rgba(111,194,224,.055);
+
+  /* Theme-dependent detail colors. Anything that must flip between dark and
+     light lives in a variable so the whole hero re-skins from ONE override
+     block below -- no structural CSS changes, no second stylesheet. */
+  --text-hi:   #FFFFFF;                          /* hover/open row text    */
+  --btn-hover: #FFFFFF;                          /* CTA hover fill         */
+  --edge-active: rgba(111,194,224,.30);          /* panel hover border     */
+  --rule:      rgba(111,194,224,.42);            /* eyebrow side rules     */
+  --stroke:    rgba(159,195,214,.22);            /* leader line, at rest   */
+  --stroke-active: rgba(111,194,224,.62);        /* leader line, lit       */
+  --linedot:   rgba(111,194,224,.45);            /* leader line panel dot  */
+  --pool:      rgba(47,124,158,.20);             /* glow behind the figure */
+  --ring:      rgba(143,212,236,.62);            /* hotspot ice ring       */
+  --num-shadow: 0 1px 4px #000;                  /* hotspot index badge    */
+
+  --font: "Segoe UI Variable Display","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono: ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",monospace;
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+
+/* ---------------------------------------------------------------------------
+   LIGHT THEME.
+   The whole hero flips by re-declaring the tokens on <body data-theme=light>.
+   The dark plate (cyan scan) is swapped for the light plate -- the source art
+   was originally designed ON WHITE, so light mode is its native look, not a
+   filter. Ink colors are the dark palette's ground colors turned into text,
+   which keeps the two modes feeling like one system.
+   ------------------------------------------------------------------------- */
+body[data-theme="light"] {
+  --bg:#FFFFFF; --bg-pool:#FFFFFF; --bg-edge:#EDF2F6;
+  --text:#16262F; --text-2:#445765; --muted:#5B6E7A;
+  --ice:#1B7CA6; --ice-hi:#6FC2E0; --ice-lo:#2E7C9E;
+  --pain:#D14B36; --pain-hi:#E8664E;
+  --hairline:  rgba(22,38,47,.16);
+  --hairline-2:rgba(22,38,47,.10);
+  --glass:     rgba(22,38,47,.040);
+  --glass-hi:  rgba(22,38,47,.070);
+  --glass-ice: rgba(27,124,166,.070);
+  --text-hi:#0B1218;
+  --btn-hover:#000000;
+  --edge-active: rgba(27,124,166,.45);
+  --rule:rgba(27,124,166,.45);
+  --stroke:rgba(22,38,47,.30);
+  --stroke-active:rgba(20,110,150,.85);
+  --linedot:rgba(27,124,166,.55);
+  --pool:rgba(47,124,158,.10);
+  --ring:rgba(27,124,166,.70);
+  --num-shadow:0 1px 3px rgba(255,255,255,.8);
+}
+
+*,*::before,*::after { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; background:var(--bg-edge); color:var(--text); font-family:var(--font); -webkit-font-smoothing:antialiased; }
+:focus-visible { outline:2px solid var(--ice); outline-offset:3px; }
+
+/* Screen-reader-only text. Used for keyboard instructions and the live region
+   that ANNOUNCES which condition is open -- the spoken equivalent of the glow. */
+.ph-sr { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+         overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* ---------------------------------------------------------------------------
+   2. GROUND
+   A single dark reading-room field. One radial pool behind the figure, dark
+   corners. No gradient blobs, no grid, no scanlines, no particles.
+   ------------------------------------------------------------------------- */
+.ph-root {
+  position:relative; min-height:100vh;
+  background:radial-gradient(ellipse 62% 56% at 50% 42%,
+             var(--bg-pool) 0%, var(--bg) 58%, var(--bg-edge) 100%);
+}
+
+/* PLACEHOLDER header. Replace with the practice's real site header. The
+   AmeraCel logo from the source has been removed entirely. */
+.ph-bar { max-width:1240px; margin:0 auto; padding:26px 48px 0;
+          display:flex; justify-content:space-between; align-items:center; gap:16px; }
+.ph-wordmark { font-size:13px; font-weight:600; letter-spacing:.16em; color:var(--text); }
+.ph-wordmark span { font-weight:400; color:var(--ice); }
+.ph-bar-meta { font:500 10.5px var(--mono); letter-spacing:.18em; color:var(--muted); }
+.ph-bar-right { display:flex; align-items:center; gap:14px; }
+
+/* THEME TOGGLE. Mono pill, matching the eyebrow's clinical-metadata language.
+   The label always names the theme you would SWITCH TO (dark shows "LIGHT"),
+   and aria-pressed reports whether light is the active one. A real button, so
+   it is keyboard-operable and gets the standard focus ring for free. */
+.ph-theme { display:inline-flex; align-items:center; gap:8px; height:34px;
+            padding:0 14px; border:1px solid var(--hairline); border-radius:999px;
+            background:none; cursor:pointer; -webkit-tap-highlight-color:transparent;
+            font:500 10px var(--mono); letter-spacing:.18em; color:var(--muted);
+            transition:color 180ms ease-out, border-color 180ms ease-out; }
+.ph-theme:hover, .ph-theme:focus-visible { color:var(--text); border-color:var(--ice); }
+.ph-theme__dot { width:7px; height:7px; border-radius:50%; background:var(--ice);
+                 flex:none; }
+
+.ph-hero { max-width:1240px; margin:0 auto; padding:0 48px 56px; }
+
+/* ---------------------------------------------------------------------------
+   3. INTRO
+   Centred, because a symmetric full-body figure cannot carry an asymmetric
+   text block. Light weight + large size + space is where the luxury lives.
+   ------------------------------------------------------------------------- */
+.ph-intro { text-align:center; padding-top:42px; }
+.ph-eyebrow { display:flex; align-items:center; justify-content:center; gap:16px;
+              margin:0 0 16px; font:500 10.5px var(--mono); letter-spacing:.2em;
+              color:var(--ice); text-transform:uppercase; }
+.ph-rule { display:block; width:32px; height:1px; background:var(--rule); }
+.ph-title { margin:0; font-size:clamp(38px,4vw,56px); font-weight:300;
+            letter-spacing:-.035em; line-height:1.06; color:var(--text); }
+.ph-deck { max-width:560px; margin:14px auto 0; font-size:16px; line-height:1.6;
+           color:var(--text-2); }
+.ph-cta { margin-top:20px; display:flex; align-items:center; justify-content:center;
+          gap:20px; flex-wrap:wrap; }
+.ph-btn { display:inline-flex; align-items:center; height:44px; padding:0 24px;
+          border-radius:6px; background:var(--text); color:var(--bg);
+          font-size:14px; font-weight:600; text-decoration:none;
+          transition:transform 180ms ease-out, background 180ms ease-out; }
+.ph-btn:hover { transform:translateY(-2px); background:var(--btn-hover); }
+.ph-hint { font:400 11.5px var(--mono); color:var(--muted); }
+
+/* One-time entrance. TRANSFORM ONLY -- deliberately no opacity.
+   A CSS animation whose "from" state is opacity:0 can leave content
+   permanently invisible if the frame clock stalls (headless capture, a
+   background tab, a throttled device). A frozen translateY(10px) is just a
+   10px offset and stays fully readable. Essential content must never depend
+   on an animation completing. Disabled by reduced-motion. */
+@keyframes ph-up { from { transform:translateY(10px); } to { transform:none; } }
+.ph-eyebrow { animation:ph-up 600ms ease-out both; }
+.ph-title   { animation:ph-up 600ms ease-out 80ms both; }
+.ph-deck    { animation:ph-up 600ms ease-out 160ms both; }
+.ph-cta     { animation:ph-up 600ms ease-out 240ms both; }
+
+/* ---------------------------------------------------------------------------
+   4. ATLAS GRID
+   Three columns: labels | figure | labels. The SVG leader-line layer is an
+   absolute overlay across the WHOLE atlas so a line can reach from a panel in
+   column 1 to a hotspot in column 2. Lines are recomputed from live element
+   positions, so accordion expansion can never tear them off the glows.
+   ------------------------------------------------------------------------- */
+.ph-atlas { position:relative; margin-top:34px; display:grid;
+            grid-template-columns:minmax(240px,1fr) minmax(300px,380px) minmax(240px,1fr);
+            gap:24px; align-items:start; }
+.ph-lines { position:absolute; inset:0; width:100%; height:100%;
+            pointer-events:none; z-index:1; overflow:visible; }
+.ph-lines path { fill:none; stroke:var(--stroke); stroke-width:1;
+                 transition:stroke 180ms ease-out; }
+.ph-lines path.is-active { stroke:var(--stroke-active); }
+.ph-lines circle { fill:var(--linedot); }
+
+.ph-col { position:relative; z-index:2; display:flex; flex-direction:column; gap:18px; }
+.ph-col--left  { align-items:flex-end; }
+.ph-col--right { align-items:flex-start; }
+
+/* ---------------------------------------------------------------------------
+   5. REGION PANELS + ACCORDION
+   No grey gradient tabs, no bullet glyphs, no 16px rounded cards. A 2px ice
+   tick and hairline-separated rows are the whole language.
+   ------------------------------------------------------------------------- */
+.ph-group { width:min(100%,300px); background:var(--glass);
+            border:1px solid var(--hairline); border-radius:8px; padding-bottom:5px;
+            transition:background 180ms ease-out, border-color 180ms ease-out,
+                       transform 180ms ease-out; }
+.ph-group:hover, .ph-group.is-linked { background:var(--glass-ice);
+            border-color:var(--edge-active); transform:translateY(-1px); }
+.ph-group__head { display:flex; align-items:center; gap:10px; min-height:44px;
+            padding:11px 14px; border-bottom:1px solid var(--hairline-2); }
+.ph-tick { width:2px; height:14px; border-radius:1px; background:var(--ice); flex:none; }
+.ph-index { font:500 10.5px var(--mono); letter-spacing:.08em; color:var(--ice); opacity:.75; }
+.ph-group__title { margin:0; flex:1; font-size:13px; font-weight:600;
+            letter-spacing:.02em; color:var(--text); }
+.ph-count { font:500 10.5px var(--mono); color:var(--muted); }
+
+.ph-list { list-style:none; margin:0; padding:4px 0 0; }
+.ph-item { border-bottom:1px solid var(--hairline-2); }
+.ph-item:last-child { border-bottom:0; }
+
+.ph-ailment { width:100%; min-height:31px; display:flex; align-items:center; gap:9px;
+            padding:6px 14px; border:0; background:none; text-align:left;
+            color:var(--text-2); font:400 13.5px/1.4 var(--font); cursor:pointer;
+            transition:color 180ms ease-out, background 180ms ease-out; }
+.ph-ailment:hover, .ph-ailment:focus-visible { color:var(--text-hi); background:var(--glass-hi); }
+.ph-ailment[aria-expanded="true"] { color:var(--text-hi); }
+.ph-dot { width:3px; height:3px; border-radius:50%; background:var(--ice);
+          opacity:.5; flex:none; transition:background 180ms ease-out; }
+.ph-ailment[aria-expanded="true"] .ph-dot { background:var(--pain-hi); opacity:1;
+          box-shadow:0 0 8px var(--pain); }
+.ph-ailment__title { flex:1; }
+.ph-chev { width:8px; height:8px; flex:none; opacity:.7;
+          border-right:1.5px solid var(--muted); border-bottom:1.5px solid var(--muted);
+          transform:rotate(45deg); transition:transform 240ms var(--ease), border-color 180ms; }
+.ph-ailment[aria-expanded="true"] .ph-chev { transform:rotate(225deg);
+          border-color:var(--ice); opacity:1; }
+
+/* The 0fr -> 1fr grid trick animates height without a fixed max-height. The
+   panel stays in the DOM (so aria-controls always resolves) but is marked
+   aria-hidden when closed, so screen readers never read collapsed copy. */
+.ph-detail { display:grid; grid-template-rows:0fr;
+             transition:grid-template-rows 260ms var(--ease); }
+.ph-detail__inner { overflow:hidden; }
+.ph-item.is-open .ph-detail { grid-template-rows:1fr; }
+.ph-detail p { margin:0; padding:0 16px 14px 27px; font-size:12.5px;
+             line-height:1.65; color:var(--muted); opacity:0;
+             transform:translateY(-6px);
+             transition:opacity 240ms ease-out 40ms, transform 240ms ease-out 40ms; }
+.ph-item.is-open .ph-detail p { opacity:1; transform:none; }
+
+/* ---------------------------------------------------------------------------
+   6. FIGURE
+   perspective lives on the viewport; the transform lives on the stage. The
+   image AND all six hotspots are children of the SAME stage, so the browser
+   applies one identical transform matrix to both -- alignment is automatic.
+   ------------------------------------------------------------------------- */
+.ph-viewport { position:relative; z-index:2; display:flex; justify-content:center;
+               align-items:flex-start; perspective:1200px; touch-action:pan-y; }
+.ph-pool { position:absolute; left:50%; top:38%; width:340px; height:440px;
+           transform:translate(-50%,-50%); pointer-events:none; filter:blur(30px);
+           background:radial-gradient(ellipse at center, var(--pool) 0%,
+                      rgba(47,124,158,0) 70%); }
+.ph-stage { position:relative; width:min(100%,190px); aspect-ratio:370/1000;
+            transform-style:preserve-3d;
+            transform:rotateY(var(--ry,0deg)) rotateX(var(--rx,0deg));
+            transition:transform 340ms var(--ease); }
+.ph-stage.is-dragging { transition:none; will-change:transform; }
+/* No fade on the anatomy itself. It is the single most important object on
+   the page and must be present in the very first paint, unconditionally.
+   TWO plates are stacked: the cyan scan for dark, the original white-matted
+   art for light. Both are inline data URIs, so the swap is instant with no
+   network fetch, no preload and no flicker. The inactive one is display:none
+   (not opacity) so it never paints. */
+.ph-body { position:absolute; inset:0; display:block; width:100%; height:100%;
+           pointer-events:none; user-select:none; -webkit-user-drag:none; }
+.ph-body--light { display:none; }
+body[data-theme="light"] .ph-body--dark { display:none; }
+body[data-theme="light"] .ph-body--light { display:block; }
+.ph-hots { position:absolute; inset:0; }
+.ph-drag { position:absolute; left:50%; bottom:-22px; transform:translateX(-50%);
+           margin:0; white-space:nowrap; pointer-events:none;
+           font:500 9.5px var(--mono); letter-spacing:.18em;
+           color:var(--muted); opacity:.55; }
+
+/* ---------------------------------------------------------------------------
+   7. HOTSPOTS
+   Four concentric layers. The persistent ICE RING + mono INDEX are the
+   non-color cue: greyscale the whole hero and all six points are still
+   identifiable. Coral is never used for type (red text reads as an alarm).
+   ------------------------------------------------------------------------- */
+.ph-hot { position:absolute; width:48px; height:48px; margin:0; padding:0;
+          border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent;
+          transform:translate(-50%,-50%) translateZ(1px);
+          transition:opacity 180ms ease-out; }
+.ph-hot:focus-visible { outline:2px solid var(--ice); outline-offset:3px; border-radius:50%; }
+.ph-hot > span { position:absolute; left:50%; top:50%;
+                 transform:translate(-50%,-50%); display:block;
+                 border-radius:50%; pointer-events:none; }
+.ph-hot__halo { width:48px; height:48px;
+                background:radial-gradient(circle, rgba(244,112,92,.30) 0%,
+                            rgba(244,112,92,0) 70%); opacity:.55; }
+.ph-hot__ring { width:32px; height:32px; border:1px solid var(--ring); }
+.ph-hot__core { width:9px; height:9px;
+                background:radial-gradient(circle at 35% 35%, #FFD9CC, var(--pain));
+                box-shadow:0 0 12px rgba(244,112,92,.85); }
+.ph-hot .ph-hot__num { left:auto; right:-6px; top:-9px; transform:none;
+                       font:500 10px var(--mono); letter-spacing:.06em;
+                       color:var(--text); opacity:.85; text-shadow:var(--num-shadow); }
+
+/* IDLE = still. PULSE only happens on hover/focus, which is what makes the
+   pulse mean "you are pointing here" instead of being decorative noise. */
+.ph-hot.is-pulsing .ph-hot__halo { animation:ph-breathe 1.15s ease-in-out infinite alternate; }
+.ph-hot.is-pulsing .ph-hot__ring  { animation:ph-ring 1.4s cubic-bezier(.16,1,.3,1) infinite; }
+.ph-hot.is-pulsing .ph-hot__core  { animation:ph-core 1.15s ease-in-out infinite alternate; }
+@keyframes ph-breathe { from { opacity:.5; transform:translate(-50%,-50%) scale(.9); }
+                        to   { opacity:1;  transform:translate(-50%,-50%) scale(1.22); } }
+@keyframes ph-ring { 0% { opacity:.9; transform:translate(-50%,-50%) scale(.8); }
+                     100% { opacity:0; transform:translate(-50%,-50%) scale(1.9); } }
+@keyframes ph-core { from { transform:translate(-50%,-50%) scale(1); }
+                     to   { transform:translate(-50%,-50%) scale(1.35); } }
+.ph-hot.is-dim { opacity:.38; }
+
+/* OPEN = steady. All pulse motion freezes so the eye can rest on the reading.
+   Open wins over hover, so pointing elsewhere still pulses THAT hotspot while
+   the open one stays locked. */
+.ph-hot.is-open .ph-hot__ring { animation:none; width:24px; height:24px;
+                                border:2px solid var(--ice); opacity:1; }
+.ph-hot.is-open .ph-hot__halo { animation:none; opacity:.85;
+                                transform:translate(-50%,-50%) scale(1.05); }
+.ph-hot.is-open .ph-hot__core { animation:none; }
+.ph-hot.is-open .ph-hot__num { color:var(--text-hi); opacity:1; }
+
+.ph-disclaimer { max-width:720px; margin:28px auto 0; text-align:center;
+                 font-size:11.5px; line-height:1.6; color:var(--muted); opacity:.82; }
+
+/* ---------------------------------------------------------------------------
+   8. RESPONSIVE
+   Desktop >=1200: three columns + vector leader lines.
+   Tablet 768-1199: figure on top, two label columns below, lines OFF
+                    (numbered badges carry the mapping instead).
+   Phone <768: single column, all 23 items in one global single-open group.
+   ------------------------------------------------------------------------- */
+@media (max-width:1199px) {
+  .ph-atlas { grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+              grid-template-areas:"body body" "left right"; gap:28px; }
+  .ph-viewport { grid-area:body; }
+  .ph-col--left  { grid-area:left;  align-items:stretch; }
+  .ph-col--right { grid-area:right; align-items:stretch; }
+  .ph-group { width:100%; }
+  .ph-lines { display:none !important; }
+  .ph-stage { width:min(100%,190px); }
+}
+@media (max-width:767px) {
+  .ph-bar { padding:20px 20px 0; }
+  .ph-hero { padding:0 20px 40px; }
+  .ph-intro { padding-top:40px; }
+  /* The eyebrow is a flex row with two fixed rules and a long uppercase
+     letter-spaced label. At 390px its min-content width exceeds the viewport
+     and pushes the whole page sideways. Drop the rules and let it wrap. */
+  .ph-eyebrow { display:block; font-size:9.5px; letter-spacing:.12em;
+                line-height:1.7; margin-bottom:14px; }
+  .ph-rule { display:none; }
+  .ph-deck { font-size:15px; max-width:100%; }
+  .ph-atlas { grid-template-columns:minmax(0,1fr);
+              grid-template-areas:"body" "left" "right"; gap:24px; margin-top:36px; }
+  .ph-stage { width:min(100%,170px); }
+  .ph-hint, .ph-bar-meta { display:none; }
+  .ph-drag { bottom:-18px; }
+  /* A long condition name must never force a grid column wider than the
+     screen. minmax(0,1fr) above handles the track; this handles the item. */
+  .ph-group, .ph-ailment__title { min-width:0; }
+  .ph-ailment__title { overflow-wrap:anywhere; }
+}
+
+/* ---------------------------------------------------------------------------
+   9b. TOUCH / COARSE POINTER
+   "DRAG TO EXPLORE" would be a lie on touch: drag-tilt is deliberately OFF
+   there so a finger drag scrolls the page instead of hijacking it. Hide the
+   hint, and grow the ailment rows to the 44px touch-target standard.
+   ------------------------------------------------------------------------- */
+@media (hover:none), (pointer:coarse) {
+  .ph-drag { display:none; }
+  .ph-ailment { min-height:44px; }
+}
+
+/* ---------------------------------------------------------------------------
+   10. REDUCED MOTION
+   Swap, don't delete: all motion is removed but state still changes COLOR and
+   the steady ice ring stays. The focus ring is never removed.
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto; }
+  *,*::before,*::after { animation-duration:.001ms !important;
+                         animation-iteration-count:1 !important;
+                         transition-duration:.001ms !important; }
+  .ph-stage { transform:none !important; }
+  .ph-hot.is-pulsing .ph-hot__halo { opacity:.85; }
+  .ph-hot.is-pulsing .ph-hot__ring { border-color:var(--ice); opacity:1; }
+}
+</style>
+</head>
+<body>
+
+<div class="ph-root" id="pain-hero">
+
+  <header class="ph-bar">
+    <span class="ph-wordmark">&#9672; IMAGING <span>ATLAS</span></span>
+    <span class="ph-bar-right">
+      <span class="ph-bar-meta">INTERACTIVE ATLAS &middot; 01 / 06</span>
+      <button type="button" class="ph-theme" id="ph-theme" aria-pressed="false">
+        <span class="ph-theme__dot" aria-hidden="true"></span>
+        <span class="ph-theme__label">LIGHT</span>
+      </button>
+    </span>
+  </header>
+
+  <main class="ph-hero">
+    <div class="ph-intro">
+      <p class="ph-eyebrow"><span class="ph-rule"></span> Diagnostic Imaging &middot; Interactive Atlas <span class="ph-rule"></span></p>
+      <h1 class="ph-title">See what&rsquo;s behind<br>the pain.</h1>
+      <p class="ph-deck">Six body regions, twenty-three common conditions. Point to an area on the figure, then open a condition to read what imaging can reveal.</p>
+      <div class="ph-cta">
+        <a class="ph-btn" href="#ph-atlas">Explore the atlas</a>
+        <span class="ph-hint">Hover a region &middot; click a condition</span>
+      </div>
+    </div>
+
+    <p class="ph-sr" id="ph-instructions">Use Tab to move between conditions. Press Enter or Space to open one. Arrow Up and Arrow Down move between conditions, Home and End jump to the first and last, and Escape closes the open description.</p>
+    <p class="ph-sr" id="ph-live" aria-live="polite" aria-atomic="true"></p>
+
+    <div class="ph-atlas" id="ph-atlas" role="group" aria-label="Interactive anatomy atlas" aria-describedby="ph-instructions">
+      <svg class="ph-lines" id="ph-lines" aria-hidden="true"></svg>
+
+      <div class="ph-col ph-col--left"  id="ph-col-left"></div>
+
+      <div class="ph-viewport" id="ph-viewport">
+        <div class="ph-pool" aria-hidden="true"></div>
+        <div class="ph-stage" id="ph-stage">
+          <img class="ph-body ph-body--dark" id="ph-body" src="__BODY_IMAGE__"
+               alt="Illustration of a front-view human body with the skeleton visible and six highlighted joint areas. Illustrative diagram, not a diagnostic image.">
+          <img class="ph-body ph-body--light" id="ph-body-light" src="__BODY_IMAGE_LIGHT__" alt="">
+          <div class="ph-hots" id="ph-hots"></div>
+        </div>
+        <p class="ph-drag" aria-hidden="true">DRAG TO EXPLORE</p>
+      </div>
+
+      <div class="ph-col ph-col--right" id="ph-col-right"></div>
+    </div>
+
+    <p class="ph-disclaimer">Illustrative diagram only &mdash; not a diagnostic image and not medical advice. Condition descriptions are draft copy pending clinical review.</p>
+  </main>
+</div>
+
+<!-- All content lives inline. A separate .json loaded with fetch() would be
+     blocked by CORS when this file is opened from disk. -->
+<script type="application/json" id="ph-data">__PH_DATA__</script>
+
+<script>
+/* ===========================================================================
+   INTERACTIVE ANATOMY HERO -- behaviour
+   ===========================================================================
+   Classic script inside an IIFE. No imports, no fetch, no modules, no globals
+   leaked. Everything is scoped to #pain-hero so this whole block can be lifted
+   into a real site's component later without a rewrite.
+
+   STATE IS THREE VARIABLES:
+     openId   -- which ONE ailment is open (null = all closed)
+     hoverId  -- which region is being previewed (null = none)
+     ry / rx  -- the current 3D tilt angles
+   Every visual state is DERIVED from those, never stored on 23 elements.
+   ========================================================================= */
+(function () {
+  'use strict';
+
+  var root     = document.getElementById('pain-hero');
+  var data     = JSON.parse(document.getElementById('ph-data').textContent);
+  var regions  = data.regions;
+  var atlas    = document.getElementById('ph-atlas');
+  var svg      = document.getElementById('ph-lines');
+  var colLeft  = document.getElementById('ph-col-left');
+  var colRight = document.getElementById('ph-col-right');
+  var hotsWrap = document.getElementById('ph-hots');
+  var stage    = document.getElementById('ph-stage');
+  var viewport = document.getElementById('ph-viewport');
+  var live     = document.getElementById('ph-live');
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer  = window.matchMedia('(pointer: fine)').matches;
+
+  var openId   = null;   // ONLY one ailment open across the whole page
+  var hoverId  = null;   // region currently being previewed
+  var lineEls  = {};     // cached <path>/<circle> per region
+  var locateTimer = null;
+
+  /* ---- THEME (dark / light) ---------------------------------------------
+     Start from the OS preference, let the toggle override it, remember the
+     choice. localStorage can throw on file:// (opaque origin), so every
+     access is wrapped. This runs FIRST so the correct plate is chosen before
+     the first paint wherever possible -- all the actual restyling happens in
+     CSS via <body data-theme>, this script only flips one attribute.        */
+  var themeBtn = document.getElementById('ph-theme');
+
+  function applyTheme(t) {
+    document.body.setAttribute('data-theme', t);
+    // The label names the theme you would switch TO; aria-pressed reports
+    // whether LIGHT is the active one.
+    themeBtn.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
+    themeBtn.querySelector('.ph-theme__label').textContent =
+      t === 'dark' ? 'LIGHT' : 'DARK';
+    scheduleLines();  // lines re-inherit theme colors; re-measure costs nothing
+  }
+  (function initTheme() {
+    var stored = null;
+    try { stored = window.localStorage.getItem('ph-theme'); } catch (err) {}
+    var osLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    applyTheme(stored === 'light' || stored === 'dark'
+               ? stored : (osLight ? 'light' : 'dark'));
+  })();
+  themeBtn.addEventListener('click', function () {
+    var next = document.body.getAttribute('data-theme') === 'dark'
+               ? 'light' : 'dark';
+    try { window.localStorage.setItem('ph-theme', next); } catch (err) {}
+    applyTheme(next);
+  });
+
+  /* ---- tiny helpers ---------------------------------------------------- */
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+  function btnFor(id)    { return document.getElementById('ph-btn-' + id); }
+  function detailFor(id) { return document.getElementById('ph-detail-' + id); }
+  function hotFor(rid)   { return root.querySelector('.ph-hot[data-region="' + rid + '"]'); }
+  function groupFor(rid) { return root.querySelector('.ph-group[data-region="' + rid + '"]'); }
+
+  // Which region owns a given ailment id. Used to light the right glow and to
+  // write the spoken "Located in: ..." line into the live region.
+  function regionOfAilment(id) {
+    for (var i = 0; i < regions.length; i++) {
+      for (var j = 0; j < regions[i].ailments.length; j++) {
+        if (regions[i].ailments[j].id === id) return regions[i];
+      }
+    }
+    return null;
+  }
+  function ailmentById(id) {
+    var r = regionOfAilment(id);
+    if (!r) return null;
+    for (var j = 0; j < r.ailments.length; j++) {
+      if (r.ailments[j].id === id) return r.ailments[j];
+    }
+    return null;
+  }
+
+  /* ---- BUILD THE DOM ----------------------------------------------------
+     Six region panels, 23 real <button> headers, 23 role="region" panels,
+     six real <button> hotspots. Everything clickable is a native button, so
+     keyboard and screen-reader behaviour comes for free.                   */
+  function buildGroups() {
+    regions.forEach(function (r) {
+      var section = document.createElement('section');
+      section.className = 'ph-group';
+      section.setAttribute('data-region', r.id);
+
+      var head = document.createElement('div');
+      head.className = 'ph-group__head';
+      head.innerHTML =
+        '<span class="ph-tick"></span>' +
+        '<span class="ph-index">' + esc(r.index) + '</span>' +
+        '<h3 class="ph-group__title">' + esc(r.label) + '</h3>' +
+        '<span class="ph-count">' + ('0' + r.ailments.length).slice(-2) + '</span>';
+      section.appendChild(head);
+
+      var ul = document.createElement('ul');
+      ul.className = 'ph-list';
+
+      r.ailments.forEach(function (a) {
+        var li = document.createElement('li');
+        li.className = 'ph-item';
+        li.setAttribute('data-aid', a.id);
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ph-ailment';
+        btn.id = 'ph-btn-' + a.id;
+        btn.setAttribute('data-aid', a.id);
+        btn.setAttribute('data-region', r.id);
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-controls', 'ph-detail-' + a.id);
+        btn.innerHTML =
+          '<span class="ph-dot"></span>' +
+          '<span class="ph-ailment__title">' + esc(a.title) + '</span>' +
+          '<span class="ph-chev"></span>';
+
+        var detail = document.createElement('div');
+        detail.className = 'ph-detail';
+        detail.id = 'ph-detail-' + a.id;
+        detail.setAttribute('role', 'region');
+        detail.setAttribute('aria-labelledby', btn.id);
+        detail.setAttribute('aria-hidden', 'true');
+        detail.innerHTML = '<div class="ph-detail__inner"><p>' + esc(a.copy) + '</p></div>';
+
+        li.appendChild(btn);
+        li.appendChild(detail);
+        ul.appendChild(li);
+      });
+
+      section.appendChild(ul);
+      (r.side === 'left' ? colLeft : colRight).appendChild(section);
+    });
+  }
+
+  function buildHotspots() {
+    regions.forEach(function (r) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ph-hot';
+      b.setAttribute('data-region', r.id);
+      // PERCENT coordinates relative to the body image. Because the stage's
+      // aspect-ratio exactly matches the asset, a point at fraction (x,y)
+      // lands at (x%,y%) at ANY rendered size -- no measurement needed.
+      b.style.left = r.xPct + '%';
+      b.style.top  = r.yPct + '%';
+      b.setAttribute('aria-label',
+        r.label + ': ' + r.ailments.length + ' conditions. Highlight this area on the figure.');
+      b.innerHTML =
+        '<span class="ph-hot__halo"></span>' +
+        '<span class="ph-hot__ring"></span>' +
+        '<span class="ph-hot__core"></span>' +
+        '<span class="ph-hot__num" aria-hidden="true">' + esc(r.index) + '</span>';
+      hotsWrap.appendChild(b);
+    });
+  }
+
+  // Build line elements ONCE with innerHTML (an SVG element parses its
+  // innerHTML in the SVG namespace). On every layout change we only UPDATE
+  // the "d" attribute -- no DOM churn, no re-animating.
+  function buildLines() {
+    var markup = '';
+    regions.forEach(function (r) {
+      markup += '<path data-line="' + r.id + '" d=""></path>' +
+                '<circle data-dot="' + r.id + '" r="2.5"></circle>';
+    });
+    svg.innerHTML = markup;
+    regions.forEach(function (r) {
+      lineEls[r.id] = {
+        path: svg.querySelector('[data-line="' + r.id + '"]'),
+        dot:  svg.querySelector('[data-dot="' + r.id + '"]')
+      };
+    });
+  }
+
+  /* ---- LEADER LINES -----------------------------------------------------
+     Recomputed from LIVE element rectangles. This is why expanding an
+     accordion can never detach a line from its glow: any layout change fires
+     the ResizeObserver and the lines are re-measured. Lines are deliberately
+     dropped below 1200px, where three columns plus six diagonals becomes
+     spaghetti -- numbered badges carry the mapping there instead.          */
+  var linesPending = false;
+  function scheduleLines() {
+    if (linesPending) return;
+    linesPending = true;
+    window.requestAnimationFrame(function () {
+      linesPending = false;
+      syncLines();
+    });
+  }
+  function syncLines() {
+    var wide = window.matchMedia('(min-width:1200px)').matches;
+    if (!wide || reduceMotion) { svg.style.display = 'none'; return; }
+    svg.style.display = '';
+
+    var ar = atlas.getBoundingClientRect();
+    if (!ar.width || !ar.height) return;
+    svg.setAttribute('width',  ar.width);
+    svg.setAttribute('height', ar.height);
+
+    regions.forEach(function (r) {
+      var head = groupFor(r.id);
+      var hot  = hotFor(r.id);
+      if (!head || !hot) return;
+      var hr = head.querySelector('.ph-group__head').getBoundingClientRect();
+      var br = hot.getBoundingClientRect();
+
+      // Panel anchor: inner edge of the header, vertically centred.
+      var ax = (r.side === 'left' ? hr.right : hr.left) - ar.left;
+      var ay = hr.top + hr.height / 2 - ar.top;
+      // Hotspot centre. getBoundingClientRect on a 3D-transformed element
+      // returns its projected box, so lines follow the tilt automatically.
+      var hx = br.left + br.width / 2 - ar.left;
+      var hy = br.top + br.height / 2 - ar.top;
+      var dir = r.side === 'left' ? 1 : -1;
+
+      // A short horizontal stub off the panel, then one straight diagonal
+      // that stops 14px short of the glow so line and glow never muddy.
+      var d = 'M ' + ax.toFixed(1) + ' ' + ay.toFixed(1) +
+              ' L ' + (ax + dir * 10).toFixed(1) + ' ' + ay.toFixed(1) +
+              ' L ' + (hx - dir * 14).toFixed(1) + ' ' + hy.toFixed(1);
+      lineEls[r.id].path.setAttribute('d', d);
+      lineEls[r.id].dot.setAttribute('cx', ax.toFixed(1));
+      lineEls[r.id].dot.setAttribute('cy', ay.toFixed(1));
+    });
+  }
+
+  /* ---- STATE RENDERING --------------------------------------------------
+     All 23 buttons, all 23 panels and all 6 hotspots are derived from the
+     THREE state variables. Nothing toggles independently.                   */
+  function applyHover() {
+    var openRegion = openId ? regionOfAilment(openId).id : null;
+    regions.forEach(function (r) {
+      var hot = hotFor(r.id);
+      var isOpenHot = (r.id === openRegion);
+      // Pulse = "you're pointing here". Steady ring = "you're reading here".
+      // Open wins over hover, and non-target hotspots dim for focus.
+      hot.classList.toggle('is-pulsing', hoverId === r.id && !isOpenHot);
+      hot.classList.toggle('is-open',    isOpenHot);
+      hot.classList.toggle('is-dim',     hoverId !== null && hoverId !== r.id && !isOpenHot);
+      groupFor(r.id).classList.toggle('is-linked', hoverId === r.id);
+      if (lineEls[r.id]) {
+        lineEls[r.id].path.classList.toggle('is-active', hoverId === r.id || isOpenHot);
+      }
+    });
+  }
+  function setHover(rid) {
+    if (hoverId === rid) return;
+    hoverId = rid;
+    applyHover();
+  }
+
+  function applyOpenState() {
+    var openRegion = openId ? regionOfAilment(openId).id : null;
+    regions.forEach(function (r) {
+      r.ailments.forEach(function (a) {
+        var isOpen = (a.id === openId);
+        var btn = btnFor(a.id);
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        btn.parentNode.classList.toggle('is-open', isOpen);
+        detailFor(a.id).setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      });
+      hotFor(r.id).classList.toggle('is-open', r.id === openRegion);
+    });
+
+    // The live region is the spoken equivalent of the glow: it announces the
+    // condition, the description AND which body region it lives in. This is
+    // also how "clicking another closed the first" is conveyed to a screen
+    // reader -- no extra announcement code required.
+    if (openId) {
+      var a = ailmentById(openId);
+      live.textContent = a.title + '. ' + a.copy + ' Located in: ' +
+                         regionOfAilment(openId).label + '.';
+    } else {
+      live.textContent = '';
+    }
+
+    applyHover();      // re-derive pulse so OPEN always wins over hover
+    scheduleLines();   // expansion changed layout -> re-measure the lines
+  }
+  function setOpen(id) {
+    openId = (openId === id) ? null : id;   // click the open one to close it
+    applyOpenState();
+  }
+
+  /* ---- EVENTS ----------------------------------------------------------- */
+  // Click: an ailment opens (single-open rule). A hotspot is a LOCATE gesture
+  // only -- it pulses briefly and never expands anything, so it cannot create
+  // an ambiguous second "open" state.
+  atlas.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.ph-ailment') : null;
+    if (btn) { setOpen(btn.getAttribute('data-aid')); return; }
+    var hot = e.target.closest ? e.target.closest('.ph-hot') : null;
+    if (hot) {
+      var rid = hot.getAttribute('data-region');
+      setHover(rid);
+      window.clearTimeout(locateTimer);
+      locateTimer = window.setTimeout(function () {
+        if (hoverId === rid) setHover(null);
+      }, 1600);
+    }
+  });
+
+  // Hover AND focus both pulse. Binding focus matters: a hover-only effect
+  // would be completely invisible to keyboard users.
+  root.addEventListener('pointerover', function (e) {
+    if (e.pointerType === 'touch') return;
+    var el = e.target.closest ? e.target.closest('[data-region]') : null;
+    setHover(el ? el.getAttribute('data-region') : null);
+  });
+  root.addEventListener('pointerleave', function () { setHover(null); });
+  root.addEventListener('focusin', function (e) {
+    var el = e.target.closest ? e.target.closest('[data-region]') : null;
+    if (el) setHover(el.getAttribute('data-region'));
+  });
+  root.addEventListener('focusout', function (e) {
+    var el = (e.relatedTarget && e.relatedTarget.closest)
+             ? e.relatedTarget.closest('[data-region]') : null;
+    setHover(el ? el.getAttribute('data-region') : null);
+  });
+
+  // Keyboard: standard APG accordion keys. All 23 headers are tabbable;
+  // arrows/Home/End are a convenience on top. Escape closes and restores
+  // focus to the header that was open.
+  root.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && openId) {
+      var id = openId;
+      setOpen(openId);
+      var b = btnFor(id);
+      if (b) b.focus();
+      return;
+    }
+    var btn = (e.target.closest) ? e.target.closest('.ph-ailment') : null;
+    if (!btn) return;
+    var list = Array.prototype.slice.call(root.querySelectorAll('.ph-ailment'));
+    var i = list.indexOf(btn), next = null;
+    if (e.key === 'ArrowDown')      next = list[Math.min(i + 1, list.length - 1)];
+    else if (e.key === 'ArrowUp')   next = list[Math.max(i - 1, 0)];
+    else if (e.key === 'Home')      next = list[0];
+    else if (e.key === 'End')       next = list[list.length - 1];
+    if (next) { e.preventDefault(); next.focus(); }
+  });
+
+  /* ---- 3D TILT (the honest "turn") -------------------------------------
+     A flat front-view raster has NO back. This is a subtle perspective tilt,
+     not anatomical rotation: it foreshortens the same front pixels. Clamped
+     to +/-16 degrees on Y and +/-8 on X. On release it eases back to the
+     passive parallax baseline (which is flat once the pointer leaves), so the
+     illustration is never left sharply distorted.
+     Never labelled "360", "3D model", or "see the back".
+
+     Passive pointer parallax (+/-7 / +/-4) gives depth without a visible
+     control; drag lets the user push further. Disabled entirely for reduced
+     motion and for touch, where the flat 0-degree view is the default and
+     loses the user nothing.                                                */
+  var ry = 0, rx = 0, passiveRy = 0, passiveRx = 0;
+  var dragging = false, sx = 0, sy = 0, sry = 0, srx = 0;
+  var tiltPending = false;
+
+  function writeTransform() {
+    stage.style.setProperty('--ry', ry.toFixed(2) + 'deg');
+    stage.style.setProperty('--rx', rx.toFixed(2) + 'deg');
+    scheduleLines();   // hotspots moved with the stage -> lines must follow
+  }
+  function requestTilt() {
+    if (tiltPending) return;
+    tiltPending = true;
+    window.requestAnimationFrame(function () { tiltPending = false; writeTransform(); });
+  }
+
+  if (finePointer && !reduceMotion) {
+    viewport.addEventListener('pointermove', function (e) {
+      if (dragging || e.pointerType === 'touch') return;
+      var r = viewport.getBoundingClientRect();
+      var nx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+      var ny = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+      passiveRy = clamp(nx, -1, 1) * 7;
+      passiveRx = clamp(-ny, -1, 1) * 4;
+      ry = passiveRy; rx = passiveRx;
+      requestTilt();
+    });
+    viewport.addEventListener('pointerleave', function () {
+      if (dragging) return;
+      passiveRy = 0; passiveRx = 0; ry = 0; rx = 0;
+      requestTilt();
+    });
+    stage.addEventListener('pointerdown', function (e) {
+      // Hotspot buttons must stay clickable; never hijack their pointerdown.
+      if (e.pointerType === 'touch' || (e.target.closest && e.target.closest('button'))) return;
+      dragging = true; sx = e.clientX; sy = e.clientY; sry = ry; srx = rx;
+      stage.classList.add('is-dragging');
+      try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+      e.preventDefault();
+    });
+    stage.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      ry = clamp(sry + (e.clientX - sx) * 0.11, -16, 16);
+      rx = clamp(srx - (e.clientY - sy) * 0.055, -8, 8);
+      requestTilt();
+    });
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      stage.classList.remove('is-dragging');
+      try { stage.releasePointerCapture(e.pointerId); } catch (err) {}
+      ry = passiveRy; rx = passiveRx;   // spring back, never leave distorted
+      requestTilt();
+    }
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+  }
+
+  /* ---- LAYOUT SYNC ------------------------------------------------------ */
+  window.addEventListener('resize', scheduleLines);
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(scheduleLines);
+    ro.observe(atlas);
+    ro.observe(colLeft);
+    ro.observe(colRight);
+  }
+
+  /* ---- BOOT ------------------------------------------------------------- */
+  buildGroups();
+  buildHotspots();
+  buildLines();
+  applyOpenState();
+  // Draw lines immediately as well as on the next frame. getBoundingClientRect
+  // forces layout, so this is safe before the image finishes decoding, and it
+  // guarantees visible connectors even in environments that defer rAF (e.g.
+  // a headless DOM snapshot or a background tab).
+  syncLines();
+  scheduleLines();
+  window.requestAnimationFrame(scheduleLines);
+
+  /* ---- BUILT-IN SELF TEST ----------------------------------------------
+     Only runs with ?selftest=1 in the URL; completely invisible otherwise.
+     build/verify_dom.py launches headless Chrome against that URL and parses
+     the resulting DOM, which gives us REAL browser evidence for the hardest
+     requirement ("only one accordion may be open") from a single command.
+     No Selenium, no server, no network.                                    */
+  function runSelfTest() {
+    var out = document.createElement('div');
+    out.id = 'selftest-results';
+    out.className = 'ph-sr';
+    document.body.appendChild(out);
+
+    // Layout report: lets build/verify_layout.py prove there is NO horizontal
+    // overflow at phone, tablet and desktop widths from a plain command.
+    var report = document.createElement('div');
+    report.id = 'layout-report';
+    report.className = 'ph-sr';
+    report.textContent = 'LAYOUT innerWidth=' + window.innerWidth +
+                         ' scrollWidth=' + document.documentElement.scrollWidth;
+    document.body.appendChild(report);
+
+    var failures = [];
+    function chk(ok, name) { if (!ok) failures.push(name); }
+
+    var btns = Array.prototype.slice.call(root.querySelectorAll('.ph-ailment'));
+    chk(btns.length === 23, '23 accordion buttons');
+    chk(root.querySelectorAll('.ph-hot').length === 6, '6 hotspots');
+
+    btns[0].click();
+    chk(root.querySelectorAll('.ph-ailment[aria-expanded="true"]').length === 1,
+        'one open after first click');
+
+    var firstId = btns[0].getAttribute('data-aid');
+    var firstRegion = btns[0].getAttribute('data-region');
+    var other = btns.filter(function (b) {
+      return b.getAttribute('data-region') !== firstRegion;
+    })[0];
+    other.click();
+    chk(root.querySelectorAll('.ph-ailment[aria-expanded="true"]').length === 1,
+        'STILL one open after clicking a different region');
+    chk(document.getElementById('ph-btn-' + firstId).getAttribute('aria-expanded') === 'false',
+        'the first accordion closed');
+
+    other.click();
+    chk(root.querySelectorAll('.ph-ailment[aria-expanded="true"]').length === 0,
+        'clicking the open one closes it');
+
+    btns[2].click();
+    root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    chk(root.querySelectorAll('.ph-ailment[aria-expanded="true"]').length === 0,
+        'Escape closes');
+
+    var g = root.querySelector('.ph-group');
+    g.dispatchEvent(new Event('pointerover', { bubbles: true }));
+    chk(root.querySelectorAll('.ph-hot.is-pulsing').length === 1,
+        'hover pulses exactly one hotspot');
+
+    chk(root.querySelectorAll('.ph-detail[role="region"]').length === 23,
+        '23 role=region panels');
+
+    // Hotspots must be CHILDREN of the transformed stage. That is the whole
+    // alignment guarantee: one transform matrix applies to image and dots.
+    chk(document.getElementById('ph-stage').contains(hotsWrap),
+        'hotspots share the 3D stage');
+
+    // Simulate a drag and prove the tilt is applied, clamped to 16 degrees,
+    // and springs back to flat on release. Synthetic PointerEvents drive the
+    // same handlers a real mouse would. writeTransform() flushes the pending
+    // rAF, which headless --dump-dom does not fire on its own.
+    if (finePointer && !reduceMotion) {
+      function pe(type, x, y) {
+        return new PointerEvent(type, { bubbles: true, pointerId: 7,
+          pointerType: 'mouse', clientX: x, clientY: y });
+      }
+      stage.dispatchEvent(pe('pointerdown', 700, 500));
+      stage.dispatchEvent(pe('pointermove', 1100, 500)); // +400px, should clamp
+      writeTransform();
+      var ryVal = parseFloat(stage.style.getPropertyValue('--ry'));
+      chk(ryVal > 0 && ryVal <= 16.01, 'drag tilts the body within the clamp');
+      stage.dispatchEvent(pe('pointerup', 1100, 500));
+      writeTransform();
+      var ryAfter = parseFloat(stage.style.getPropertyValue('--ry'));
+      chk(Math.abs(ryAfter) < 1, 'body springs back to flat on release');
+    }
+
+    out.textContent = failures.length
+      ? ('SELFTEST FAIL ' + failures.join(' | '))
+      : 'SELFTEST PASS';
+  }
+  // Run SYNCHRONOUSLY. All assertions inspect DOM state only, so no layout or
+  // animation frame is needed. (Chrome's --headless --dump-dom snapshots the
+  // DOM before rAF callbacks fire, so an rAF-gated test would never report.)
+  if (/selftest=1/.test(window.location.search)) {
+    runSelfTest();
+  }
+})();
+</script>
+</body>
+</html>
